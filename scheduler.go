@@ -20,7 +20,7 @@ type Scheduler struct {
 	keepAlive  time.Duration
 }
 
-// NewScheduler creates a new bubbygo scheduler with default Go Routine KeepAlive Time of 30 minutes
+// NewScheduler creates a new bubbygo scheduler with default Go Routine KeepAlive Time of 30 seconds
 func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 	if preStart <= 0 && queueSize > 0 {
 		panic(fmt.Sprintf("scheduler deadlock settings detected, preStart: %d queueSize: %d", preStart, queueSize))
