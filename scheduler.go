@@ -43,8 +43,8 @@ func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 	return s
 }
 
-// GoRoutineCount gives an estimate of the number of go routines active.  Do not use for thread synchronization
-func (s *Scheduler) GoRoutineCount() int {
+// Len gives an estimate of the number of go routines active.  Do not use for thread synchronization
+func (s *Scheduler) Len() int {
 	return int(s.goRoutines)
 }
 
