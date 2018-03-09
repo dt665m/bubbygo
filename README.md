@@ -26,4 +26,4 @@ err := sched.Do(context.Background(), func() {
 ```
 
 # KeepAlive
-By default, the Scheduler reuses Go Routines for 30 seconds by processing queued jobs.  This can be tuned with Scheduler.SetKeepAlive(time.duration).  The purposes of keeping the go routines alive is so they can serve extra jobs on the queue without shutting down and respinning more go routines up.  This setting is a performance tradeoff, mainly used to fine tune the expected sustained load of requests.  If the expected jobs are short and bursty, use a lower KeepAlive.
+By default, the Scheduler reuses Go Routines for a short period to continue processing queued jobs.  This can be tuned with Scheduler.SetKeepAlive(time.duration).  The purposes of keeping the go routines alive is so they can serve extra jobs on the queue without shutting down and respinning more go routines up.  This setting is a performance tradeoff, mainly used to fine tune the expected sustained load of requests.  If the expected jobs are short and bursty, use a lower KeepAlive.
