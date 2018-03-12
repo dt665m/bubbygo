@@ -37,7 +37,7 @@ func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 
 	for i := 0; i < preStart; i++ {
 		s.sem <- struct{}{}
-		go s.process(func() {}, false)
+		go s.process(func() {}, true)
 	}
 
 	return s
@@ -76,9 +76,11 @@ func (s *Scheduler) process(job func(), permanent bool) {
 	job()
 
 	// try to process more jobs before finishing, since spinning up a go routine isn't free
+	var expiryCh <-chan time.Time
 	var expiry *time.Timer
-	if permanent {
+	if !permanent {
 		expiry = time.NewTimer(s.keepAlive)
+		expiryCh = expiry.C
 	}
 DoQueueJobs:
 	for {
@@ -87,11 +89,12 @@ DoQueueJobs:
 			job()
 
 			// avoid race condition where reset can still observe previous in-flight message
-			if !expiry.Stop() {
-				<-expiry.C
+			if !permanent && !expiry.Stop() {
+				<-expiryCh
+				expiry.Reset(s.keepAlive)
+				expiryCh = expiry.C
 			}
-			expiry.Reset(s.keepAlive)
-		case <-expiry.C:
+		case <-expiryCh:
 			break DoQueueJobs
 		}
 	}
