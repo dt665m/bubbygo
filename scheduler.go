@@ -82,7 +82,7 @@ func (s *Scheduler) process(job func(), permanent bool) {
 		expiry = time.NewTimer(s.keepAlive)
 		expiryCh = expiry.C
 	}
-DoQueueJobs:
+ProcessQueue:
 	for {
 		select {
 		case job := <-s.queue:
@@ -95,7 +95,7 @@ DoQueueJobs:
 				expiryCh = expiry.C
 			}
 		case <-expiryCh:
-			break DoQueueJobs
+			break ProcessQueue
 		}
 	}
 
