@@ -63,7 +63,7 @@ func (s *Scheduler) Do(ctx context.Context, job func()) error {
 	case s.queue <- job:
 		return nil
 	case s.sem <- struct{}{}:
-		go s.process(job, true)
+		go s.process(job, false)
 		return nil
 	}
 }
@@ -88,9 +88,10 @@ ProcessQueue:
 		case job := <-s.queue:
 			job()
 
-			// avoid race condition where reset can still observe previous in-flight message
-			if !permanent && !expiry.Stop() {
-				<-expiryCh
+			if !permanent {
+				// stopping here is OK because we aren't concurrently listening on expiryCh,
+				// it's happening in the same loop
+				expiry.Stop()
 				expiry.Reset(s.keepAlive)
 				expiryCh = expiry.C
 			}
