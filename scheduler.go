@@ -61,8 +61,10 @@ func (s *Scheduler) Do(ctx context.Context, job func()) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	case s.queue <- job:
+		atomic.AddUint64(&s.activeJobs, 1)
 		return nil
 	case s.sem <- struct{}{}:
+		atomic.AddUint64(&s.activeJobs, 1)
 		go s.process(job, false)
 		return nil
 	}
@@ -72,7 +74,6 @@ func (s *Scheduler) Do(ctx context.Context, job func()) error {
 // Scheduler.keepAlive duration if permanent is false, otherwise process will spin indefinitely
 func (s *Scheduler) process(job func(), permanent bool) {
 	// handle the job that started this go routine
-	atomic.AddUint64(&s.activeJobs, 1)
 	job()
 	atomic.AddUint64(&s.activeJobs, ^uint64(0))
 
@@ -87,7 +88,6 @@ ProcessQueue:
 	for {
 		select {
 		case job := <-s.queue:
-			atomic.AddUint64(&s.activeJobs, 1)
 			job()
 			atomic.AddUint64(&s.activeJobs, ^uint64(0))
 
