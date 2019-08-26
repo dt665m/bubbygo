@@ -37,6 +37,7 @@ func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 
 	for i := 0; i < preStart; i++ {
 		s.sem <- struct{}{}
+		atomic.AddUint64(&s.activeJobs, 1)
 		go s.process(func() {}, true)
 	}
 

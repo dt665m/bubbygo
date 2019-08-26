@@ -57,3 +57,27 @@ func TestScheduler(t *testing.T) {
 	//block until job3 is done
 	<-done
 }
+
+func TestJobCounter(t *testing.T) {
+	const (
+		maxGoRoutines       = 10
+		goRoutineQueueSize  = 1000
+		permanentGoRoutines = 10
+	)
+	sched := NewScheduler(maxGoRoutines, goRoutineQueueSize, permanentGoRoutines)
+
+	//spin wait on jobs to finish
+	start := time.Now()
+	scheduledJobs := sched.Len()
+	t.Log("jobs:", scheduledJobs)
+	for scheduledJobs != 0 && time.Since(start) < 5*time.Second {
+		scheduledJobs = sched.Len()
+		if scheduledJobs == 0 {
+			break
+		}
+
+		t.Log("waiting for %d jobs to finish\n", scheduledJobs)
+		time.Sleep(100 * time.Millisecond)
+	}
+	t.Log("order processor stopped")
+}
