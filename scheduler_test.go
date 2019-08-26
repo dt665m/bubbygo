@@ -1,11 +1,9 @@
-package bubbygo_test
+package bubbygo
 
 import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/dt665m/bubbygo"
 )
 
 func TestScheduler(t *testing.T) {
@@ -13,7 +11,7 @@ func TestScheduler(t *testing.T) {
 		maxGoRoutines       = 2
 		goRoutineQueueSize  = 1
 		permanentGoRoutines = 1
-		sched               = bubbygo.NewScheduler(maxGoRoutines, goRoutineQueueSize, permanentGoRoutines)
+		sched               = NewScheduler(maxGoRoutines, goRoutineQueueSize, permanentGoRoutines)
 		jobSleep            = time.Duration(2 * time.Second)
 	)
 

@@ -1,4 +1,4 @@
-// Package bubbygo, a go routine pooling service to bound go routine spawning.
+// Package bubbygo is a go routine pooling service to bound go routine spawning.
 package bubbygo
 
 import (
@@ -14,7 +14,7 @@ const (
 
 // Scheduler is a bubbygo go routine scheduler
 type Scheduler struct {
-	goRoutines uint64
+	activeJobs uint64
 	sem        chan struct{}
 	queue      chan func()
 	keepAlive  time.Duration
@@ -29,7 +29,7 @@ func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 		panic("preStart cannot be greater than maxRoutines")
 	}
 	s := &Scheduler{
-		goRoutines: 0,
+		activeJobs: 0,
 		sem:        make(chan struct{}, maxRoutines),
 		queue:      make(chan func(), queueSize),
 		keepAlive:  time.Duration(DefaultKeepAlive),
@@ -43,9 +43,9 @@ func NewScheduler(maxRoutines, queueSize, preStart int) *Scheduler {
 	return s
 }
 
-// Len gives an estimate of the number of go routines active.  Do not use for thread synchronization
+// Len gives an estimate of the number of go routines active.
 func (s *Scheduler) Len() int {
-	return int(s.goRoutines)
+	return int(s.activeJobs)
 }
 
 // SetKeepAlive sets the keepAlive time of generated go routines
@@ -72,8 +72,9 @@ func (s *Scheduler) Do(ctx context.Context, job func()) error {
 // Scheduler.keepAlive duration if permanent is false, otherwise process will spin indefinitely
 func (s *Scheduler) process(job func(), permanent bool) {
 	// handle the job that started this go routine
-	atomic.AddUint64(&s.goRoutines, 1)
+	atomic.AddUint64(&s.activeJobs, 1)
 	job()
+	atomic.AddUint64(&s.activeJobs, ^uint64(0))
 
 	// try to process more jobs before finishing, since spinning up a go routine isn't free
 	var expiryCh <-chan time.Time
@@ -86,7 +87,9 @@ ProcessQueue:
 	for {
 		select {
 		case job := <-s.queue:
+			atomic.AddUint64(&s.activeJobs, 1)
 			job()
+			atomic.AddUint64(&s.activeJobs, ^uint64(0))
 
 			if !permanent {
 				// stopping here is OK because we aren't concurrently listening on expiryCh,
@@ -102,5 +105,4 @@ ProcessQueue:
 
 	// finish and release semaphore
 	<-s.sem
-	atomic.AddUint64(&s.goRoutines, ^uint64(0))
 }
